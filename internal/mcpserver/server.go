@@ -77,7 +77,7 @@ func registerTools(s *server.MCPServer, store *examples.ExampleStore) {
 	// add_example
 	s.AddTool(
 		mcp.NewTool("add_example",
-			mcp.WithDescription("Add a new code style/pattern example to the library"),
+			mcp.WithDescription("Add a new code style/pattern example to the library. Use this to capture coding styles and patterns from user feedback or PR reviews."),
 			mcp.WithString("language", mcp.Required(), mcp.Description("Programming language (e.g. go, csharp)")),
 			mcp.WithString("category", mcp.Required(), mcp.Description("Category (e.g. concurrency, patterns)")),
 			mcp.WithString("name", mcp.Required(), mcp.Description("Example name in kebab-case (e.g. worker-pool)")),
