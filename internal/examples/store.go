@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -39,6 +40,23 @@ func (s *ExampleStore) List(filter Filter) []Example {
 		results = append(results, ex)
 	}
 	return results
+}
+
+// Languages returns a sorted list of unique languages across all examples.
+func (s *ExampleStore) Languages() []string {
+	s.ensureLoaded()
+
+	seen := make(map[string]struct{})
+	for _, ex := range s.index {
+		seen[ex.Language] = struct{}{}
+	}
+
+	langs := make([]string, 0, len(seen))
+	for lang := range seen {
+		langs = append(langs, lang)
+	}
+	sort.Strings(langs)
+	return langs
 }
 
 // Get retrieves a specific example by its relative path (e.g. "go/concurrency/worker-pool").

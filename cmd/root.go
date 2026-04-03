@@ -20,7 +20,7 @@ var rootCmd = &cobra.Command{
 	Short: "A code style example library for LLMs",
 	Long:  "Wormtongue provides curated code style and pattern examples that LLMs can query via MCP or CLI.",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		if cmd.Name() == "help" || cmd.Name() == "completion" {
+		if cmd.Name() == "help" || cmd.Name() == "completion" || cmd.Name() == "init" {
 			return nil
 		}
 		return initStore()

@@ -345,6 +345,34 @@ func TestAddExample_ThenGet(t *testing.T) {
 	}
 }
 
+// list_languages tests
+
+func TestListLanguages_All(t *testing.T) {
+	s := setupTestServer(t)
+	text := getTextContent(t, callTool(t, s, "list_languages", map[string]any{}))
+
+	if text == "No languages found." {
+		t.Fatal("expected languages to be listed")
+	}
+	for _, expected := range []string{"go", "csharp"} {
+		if !contains(text, expected) {
+			t.Errorf("expected %q in output, got:\n%s", expected, text)
+		}
+	}
+}
+
+func TestListLanguages_Empty(t *testing.T) {
+	dir := t.TempDir()
+	store := examples.NewStore([]string{dir})
+	s := server.NewMCPServer("wormtongue-test", "0.0.1", server.WithToolCapabilities(true))
+	registerTools(s, store)
+
+	text := getTextContent(t, callTool(t, s, "list_languages", map[string]any{}))
+	if text != "No languages found." {
+		t.Errorf("expected 'No languages found.', got: %s", text)
+	}
+}
+
 // helpers
 
 func contains(s, substr string) bool {
