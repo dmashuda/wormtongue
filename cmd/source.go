@@ -40,7 +40,7 @@ var sourceAddCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Added source %q at %s\n", name, path)
+		cmd.Printf("Added source %q at %s\n", name, path)
 		return nil
 	},
 }
@@ -55,13 +55,13 @@ var sourceListCmd = &cobra.Command{
 		}
 
 		if len(cfg.Sources) == 0 {
-			fmt.Println("No external sources registered.")
+			cmd.Println("No external sources registered.")
 			return nil
 		}
 
-		fmt.Printf("%-20s %s\n", "NAME", "PATH")
+		cmd.Printf("%-20s %s\n", "NAME", "PATH")
 		for _, s := range cfg.Sources {
-			fmt.Printf("%-20s %s\n", s.Name, s.Path)
+			cmd.Printf("%-20s %s\n", s.Name, s.Path)
 		}
 		return nil
 	},
@@ -98,7 +98,7 @@ var sourceRemoveCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Removed source %q\n", name)
+		cmd.Printf("Removed source %q\n", name)
 		return nil
 	},
 }

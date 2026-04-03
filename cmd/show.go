@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +14,7 @@ var showCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Print(content)
+		cmd.Print(content)
 		return nil
 	},
 }

@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -15,16 +13,16 @@ var searchCmd = &cobra.Command{
 
 		results := store.Search(args[0], limit)
 		if len(results) == 0 {
-			fmt.Println("No matching examples found.")
+			cmd.Println("No matching examples found.")
 			return nil
 		}
 
 		for _, r := range results {
-			fmt.Printf("%s/%s/%s\n", r.Example.Language, r.Example.Category, r.Example.Name)
+			cmd.Printf("%s/%s/%s\n", r.Example.Language, r.Example.Category, r.Example.Name)
 			if r.MatchLine != "" {
-				fmt.Printf("  ...%s...\n", r.MatchLine)
+				cmd.Printf("  ...%s...\n", r.MatchLine)
 			}
-			fmt.Println()
+			cmd.Println()
 		}
 		return nil
 	},

@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -43,6 +44,32 @@ func TestSaveAndLoad(t *testing.T) {
 	}
 	if loaded.Sources[0].Path != "/tmp/examples" {
 		t.Errorf("expected path '/tmp/examples', got %q", loaded.Sources[0].Path)
+	}
+}
+
+func TestLoadInvalidYAML(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	if err := os.WriteFile(path, []byte("{{invalid yaml"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := Load(path)
+	if err == nil {
+		t.Fatal("expected error for invalid YAML")
+	}
+}
+
+func TestDefaultPath(t *testing.T) {
+	path := DefaultPath()
+	if path == "" {
+		t.Fatal("expected non-empty default path")
+	}
+	if !strings.Contains(path, "wormtongue") {
+		t.Errorf("expected path to contain 'wormtongue', got: %s", path)
+	}
+	if !strings.HasSuffix(path, "config.yaml") {
+		t.Errorf("expected path to end with config.yaml, got: %s", path)
 	}
 }
 
