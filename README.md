@@ -12,7 +12,23 @@ go install github.com/dmashuda/wormtongue@latest
 
 Or download a binary from [Releases](https://github.com/dmashuda/wormtongue/releases).
 
+## Getting Started
+
+After installing, initialize your config and example library:
+
+```bash
+wormtongue init
+```
+
+This creates `~/.config/wormtongue/config.yaml` and a default examples directory. You can then start adding examples or connecting external sources.
+
 ## Usage
+
+### List languages
+
+```bash
+wormtongue languages
+```
 
 ### List examples
 
@@ -83,6 +99,7 @@ Add wormtongue to your MCP client configuration:
 
 The MCP server exposes four tools:
 
+- **list_languages** — List all available programming languages in the library
 - **list_examples** — List available examples, optionally filtered by `language` and `category`
 - **get_example** — Retrieve the full content of an example by path
 - **search_examples** — Search examples by keyword with optional `limit`
