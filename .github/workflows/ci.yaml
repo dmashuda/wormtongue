@@ -22,8 +22,8 @@ jobs:
       - name: Build
         run: go build ./...
 
-      - name: Test
-        run: go test ./...
+      - name: Test with coverage check
+        run: make coverage
 
   lint:
     runs-on: ubuntu-latest

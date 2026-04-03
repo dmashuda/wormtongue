@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/dmashuda/wormtongue/internal/examples"
 	"github.com/spf13/cobra"
 )
@@ -21,13 +19,13 @@ var listCmd = &cobra.Command{
 
 		results := store.List(filter)
 		if len(results) == 0 {
-			fmt.Println("No examples found.")
+			cmd.Println("No examples found.")
 			return nil
 		}
 
-		fmt.Printf("%-12s %-20s %s\n", "LANGUAGE", "CATEGORY", "NAME")
+		cmd.Printf("%-12s %-20s %s\n", "LANGUAGE", "CATEGORY", "NAME")
 		for _, ex := range results {
-			fmt.Printf("%-12s %-20s %s\n", ex.Language, ex.Category, ex.Name)
+			cmd.Printf("%-12s %-20s %s\n", ex.Language, ex.Category, ex.Name)
 		}
 		return nil
 	},
