@@ -24,7 +24,7 @@ func DefaultPath() string {
 	if err != nil {
 		return ""
 	}
-	return filepath.Join(home, ".config", "wormtongue", "config.yaml")
+	return filepath.Join(home, ".wormtongue", "config.yaml")
 }
 
 // Load reads the config from the given path. If path is empty, uses the default.

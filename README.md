@@ -20,7 +20,7 @@ After installing, initialize your config and example library:
 wormtongue init
 ```
 
-This creates `~/.config/wormtongue/config.yaml` and a default examples directory. You can then start adding examples or connecting external sources.
+This creates `~/.wormtongue/config.yaml` and a default examples directory. You can then start adding examples or connecting external sources.
 
 ## Usage
 
@@ -148,7 +148,7 @@ Brief description.
 
 ## Configuration
 
-Config file: `~/.config/wormtongue/config.yaml`
+Config file: `~/.wormtongue/config.yaml`
 
 ```yaml
 sources:
