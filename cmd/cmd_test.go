@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spf13/pflag"
 )
 
 func setupCmdFixtures(t *testing.T) (examplesDir string, configPath string) {
@@ -37,6 +39,14 @@ func executeCmd(t *testing.T, examplesDir string, configPath string, args ...str
 
 	// Reset package-level state between tests
 	store = nil
+
+	// Reset all command flags to defaults to avoid state leaking between tests
+	for _, cmd := range rootCmd.Commands() {
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			_ = f.Value.Set(f.DefValue)
+			f.Changed = false
+		})
+	}
 
 	t.Setenv("WORMTONGUE_EXAMPLES", examplesDir)
 
@@ -172,6 +182,62 @@ func TestCmdSearch_Limit(t *testing.T) {
 	}
 	if count > 1 {
 		t.Errorf("expected at most 1 result with --limit 1, got %d:\n%s", count, out)
+	}
+}
+
+// add tests
+
+func TestCmdAdd_WithContentFlag(t *testing.T) {
+	exDir, cfgPath := setupCmdFixtures(t)
+	out, err := executeCmd(t, exDir, cfgPath, "add", "go", "testing", "table-tests", "--content", "# Table Tests\n\nContent here.\n")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "Added example: go/testing/table-tests") {
+		t.Errorf("expected success message, got:\n%s", out)
+	}
+}
+
+func TestCmdAdd_MissingArgs(t *testing.T) {
+	exDir, cfgPath := setupCmdFixtures(t)
+	_, err := executeCmd(t, exDir, cfgPath, "add", "go", "testing")
+	if err == nil {
+		t.Error("expected error for missing arguments")
+	}
+}
+
+func TestCmdAdd_Force(t *testing.T) {
+	exDir, cfgPath := setupCmdFixtures(t)
+
+	_, err := executeCmd(t, exDir, cfgPath, "add", "go", "concurrency", "worker-pool", "--content", "# Updated\n", "--force")
+	if err != nil {
+		t.Fatalf("expected force overwrite to succeed: %v", err)
+	}
+}
+
+func TestCmdAdd_DuplicateError(t *testing.T) {
+	exDir, cfgPath := setupCmdFixtures(t)
+
+	_, err := executeCmd(t, exDir, cfgPath, "add", "go", "concurrency", "worker-pool", "--content", "# Duplicate\n")
+	if err == nil {
+		t.Error("expected error for duplicate example")
+	}
+}
+
+func TestCmdAdd_ThenShow(t *testing.T) {
+	exDir, cfgPath := setupCmdFixtures(t)
+
+	_, err := executeCmd(t, exDir, cfgPath, "add", "go", "testing", "benchmarks", "--content", "# Benchmarks\n\nBenchmark examples.\n")
+	if err != nil {
+		t.Fatalf("add failed: %v", err)
+	}
+
+	out, err := executeCmd(t, exDir, cfgPath, "show", "go/testing/benchmarks")
+	if err != nil {
+		t.Fatalf("show failed: %v", err)
+	}
+	if !strings.Contains(out, "Benchmarks") {
+		t.Errorf("expected added content in show output, got:\n%s", out)
 	}
 }
 

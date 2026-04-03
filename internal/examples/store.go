@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+// AddOptions configures behavior for adding an example.
+type AddOptions struct {
+	Force bool // overwrite existing file if true
+}
+
 // ExampleStore manages a collection of examples from one or more source directories.
 type ExampleStore struct {
 	sources []string
@@ -91,6 +96,71 @@ func (s *ExampleStore) Search(query string, limit int) []SearchResult {
 	}
 
 	return results
+}
+
+// Add writes a new example to the first source directory.
+// Creates language/category directories if they don't exist.
+func (s *ExampleStore) Add(language, category, name, content string, opts AddOptions) (Example, error) {
+	if err := validateComponent("language", language); err != nil {
+		return Example{}, err
+	}
+	if err := validateComponent("category", category); err != nil {
+		return Example{}, err
+	}
+	if err := validateComponent("name", name); err != nil {
+		return Example{}, err
+	}
+	if strings.TrimSpace(content) == "" {
+		return Example{}, fmt.Errorf("content must not be empty")
+	}
+	if len(s.sources) == 0 {
+		return Example{}, fmt.Errorf("no example sources configured")
+	}
+
+	root := s.sources[0]
+	dir := filepath.Join(root, language, category)
+	fullPath := filepath.Join(dir, name+".md")
+
+	if !opts.Force {
+		if _, err := os.Stat(fullPath); err == nil {
+			return Example{}, fmt.Errorf("example already exists: %s/%s/%s (use force to overwrite)", language, category, name)
+		}
+	}
+
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return Example{}, fmt.Errorf("creating directories: %w", err)
+	}
+
+	if err := os.WriteFile(fullPath, []byte(content), 0o644); err != nil {
+		return Example{}, fmt.Errorf("writing example: %w", err)
+	}
+
+	s.loaded = false
+
+	return Example{
+		Name:     name,
+		Language: language,
+		Category: category,
+		Path:     fmt.Sprintf("%s/%s/%s", language, category, name),
+		FullPath: fullPath,
+	}, nil
+}
+
+func validateComponent(field, value string) error {
+	if value == "" {
+		return fmt.Errorf("%s must not be empty", field)
+	}
+	for _, r := range value {
+		isLower := r >= 'a' && r <= 'z'
+		isDigit := r >= '0' && r <= '9'
+		if !isLower && !isDigit && r != '-' {
+			return fmt.Errorf("%s contains invalid character %q: must be lowercase alphanumeric or hyphens", field, r)
+		}
+	}
+	if value[0] == '-' || value[len(value)-1] == '-' {
+		return fmt.Errorf("%s must not start or end with a hyphen", field)
+	}
+	return nil
 }
 
 func (s *ExampleStore) ensureLoaded() {

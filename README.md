@@ -35,6 +35,19 @@ wormtongue search "async"
 wormtongue search "error handling" --limit 5
 ```
 
+### Add an example
+
+```bash
+# With inline content
+wormtongue add go testing table-tests --content "# Table Tests\n\nContent here."
+
+# From a file via stdin
+cat example.md | wormtongue add go testing table-tests
+
+# Overwrite an existing example
+wormtongue add go testing table-tests --content "# Updated" --force
+```
+
 ### Manage external sources
 
 ```bash
@@ -68,11 +81,12 @@ Add wormtongue to your MCP client configuration:
 
 ### MCP Tools
 
-The MCP server exposes three tools:
+The MCP server exposes four tools:
 
 - **list_examples** — List available examples, optionally filtered by `language` and `category`
 - **get_example** — Retrieve the full content of an example by path
 - **search_examples** — Search examples by keyword with optional `limit`
+- **add_example** — Add a new example with `language`, `category`, `name`, and `content` (optional `force` to overwrite)
 
 ## Example Format
 
@@ -93,6 +107,8 @@ examples/
     patterns/
       builder-pattern.md
 ```
+
+Names must be lowercase alphanumeric with hyphens (e.g. `worker-pool`, `async-await-patterns`). New examples are written to the first configured source directory.
 
 Each file follows this structure:
 

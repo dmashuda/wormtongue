@@ -14,12 +14,18 @@ import (
 
 func setupTestServer(t *testing.T) *server.MCPServer {
 	t.Helper()
+	s, _ := setupTestServerWithDir(t)
+	return s
+}
+
+func setupTestServerWithDir(t *testing.T) (*server.MCPServer, string) {
+	t.Helper()
 	dir := setupFixtures(t)
 	store := examples.NewStore([]string{dir})
 
 	s := server.NewMCPServer("wormtongue-test", "0.0.1", server.WithToolCapabilities(true))
 	registerTools(s, store)
-	return s
+	return s, dir
 }
 
 func setupFixtures(t *testing.T) string {
@@ -224,6 +230,118 @@ func TestSearchExamples_MissingQuery(t *testing.T) {
 
 	if !resp.Result.IsError {
 		t.Error("expected error response for missing query param")
+	}
+}
+
+// add_example tests
+
+func TestAddExample_Success(t *testing.T) {
+	s, dir := setupTestServerWithDir(t)
+	text := getTextContent(t, callTool(t, s, "add_example", map[string]any{
+		"language": "go",
+		"category": "testing",
+		"name":     "table-tests",
+		"content":  "# Table Tests\n\nContent here.\n",
+	}))
+
+	if !contains(text, "Added example: go/testing/table-tests") {
+		t.Errorf("expected success message, got: %s", text)
+	}
+
+	// Verify file on disk
+	data, err := os.ReadFile(filepath.Join(dir, "go", "testing", "table-tests.md"))
+	if err != nil {
+		t.Fatalf("expected file to exist: %v", err)
+	}
+	if string(data) != "# Table Tests\n\nContent here.\n" {
+		t.Errorf("unexpected file content: %q", string(data))
+	}
+}
+
+func TestAddExample_MissingParams(t *testing.T) {
+	s := setupTestServer(t)
+
+	tests := []struct {
+		name string
+		args map[string]any
+	}{
+		{"missing language", map[string]any{"category": "cat", "name": "n", "content": "c"}},
+		{"missing category", map[string]any{"language": "go", "name": "n", "content": "c"}},
+		{"missing name", map[string]any{"language": "go", "category": "cat", "content": "c"}},
+		{"missing content", map[string]any{"language": "go", "category": "cat", "name": "n"}},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			resp := parseToolResponse(t, callTool(t, s, "add_example", tc.args))
+			if !resp.Result.IsError {
+				t.Error("expected error response")
+			}
+		})
+	}
+}
+
+func TestAddExample_InvalidName(t *testing.T) {
+	s := setupTestServer(t)
+	resp := parseToolResponse(t, callTool(t, s, "add_example", map[string]any{
+		"language": "Go",
+		"category": "testing",
+		"name":     "table-tests",
+		"content":  "# Content\n",
+	}))
+
+	if !resp.Result.IsError {
+		t.Error("expected error for invalid language")
+	}
+}
+
+func TestAddExample_Duplicate(t *testing.T) {
+	s := setupTestServer(t)
+	resp := parseToolResponse(t, callTool(t, s, "add_example", map[string]any{
+		"language": "go",
+		"category": "concurrency",
+		"name":     "worker-pool",
+		"content":  "# Duplicate\n",
+	}))
+
+	if !resp.Result.IsError {
+		t.Error("expected error for duplicate example")
+	}
+}
+
+func TestAddExample_Force(t *testing.T) {
+	s := setupTestServer(t)
+	text := getTextContent(t, callTool(t, s, "add_example", map[string]any{
+		"language": "go",
+		"category": "concurrency",
+		"name":     "worker-pool",
+		"content":  "# Updated\n",
+		"force":    true,
+	}))
+
+	if !contains(text, "Added example") {
+		t.Errorf("expected success with force, got: %s", text)
+	}
+}
+
+func TestAddExample_ThenGet(t *testing.T) {
+	s := setupTestServer(t)
+
+	// Add
+	getTextContent(t, callTool(t, s, "add_example", map[string]any{
+		"language": "python",
+		"category": "web",
+		"name":     "flask-routes",
+		"content":  "# Flask Routes\n\nRoute examples.\n",
+	}))
+
+	// Get
+	text := getTextContent(t, callTool(t, s, "get_example", map[string]any{
+		"path": "python/web/flask-routes",
+	}))
+
+	if !contains(text, "Flask Routes") {
+		t.Errorf("expected added content from get, got: %s", text)
 	}
 }
 

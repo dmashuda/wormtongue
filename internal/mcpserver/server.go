@@ -74,6 +74,45 @@ func registerTools(s *server.MCPServer, store *examples.ExampleStore) {
 		},
 	)
 
+	// add_example
+	s.AddTool(
+		mcp.NewTool("add_example",
+			mcp.WithDescription("Add a new code style/pattern example to the library. Use this to capture coding styles and patterns from user feedback or PR reviews."),
+			mcp.WithString("language", mcp.Required(), mcp.Description("Programming language (e.g. go, csharp)")),
+			mcp.WithString("category", mcp.Required(), mcp.Description("Category (e.g. concurrency, patterns)")),
+			mcp.WithString("name", mcp.Required(), mcp.Description("Example name in kebab-case (e.g. worker-pool)")),
+			mcp.WithString("content", mcp.Required(), mcp.Description("Full markdown content of the example")),
+			mcp.WithBoolean("force", mcp.Description("Overwrite existing example if true (default false)")),
+		),
+		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			language, err := req.RequireString("language")
+			if err != nil {
+				return mcp.NewToolResultError("language is required"), nil
+			}
+			category, err := req.RequireString("category")
+			if err != nil {
+				return mcp.NewToolResultError("category is required"), nil
+			}
+			name, err := req.RequireString("name")
+			if err != nil {
+				return mcp.NewToolResultError("name is required"), nil
+			}
+			content, err := req.RequireString("content")
+			if err != nil {
+				return mcp.NewToolResultError("content is required"), nil
+			}
+			force := req.GetBool("force", false)
+
+			ex, addErr := store.Add(language, category, name, content, examples.AddOptions{
+				Force: force,
+			})
+			if addErr != nil {
+				return mcp.NewToolResultError(addErr.Error()), nil
+			}
+			return mcp.NewToolResultText(fmt.Sprintf("Added example: %s", ex.Path)), nil
+		},
+	)
+
 	// search_examples
 	s.AddTool(
 		mcp.NewTool("search_examples",

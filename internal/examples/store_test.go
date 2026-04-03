@@ -150,6 +150,151 @@ func TestSearch_CaseInsensitive(t *testing.T) {
 	}
 }
 
+func TestAdd_Success(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore([]string{dir})
+
+	ex, err := store.Add("go", "testing", "table-tests", "# Table Tests\n\nContent here.\n", AddOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ex.Path != "go/testing/table-tests" {
+		t.Errorf("expected path 'go/testing/table-tests', got %q", ex.Path)
+	}
+
+	// Verify file on disk
+	data, err := os.ReadFile(ex.FullPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "# Table Tests\n\nContent here.\n" {
+		t.Errorf("unexpected file content: %q", string(data))
+	}
+
+	// Verify Get works
+	_, content, err := store.Get("go/testing/table-tests")
+	if err != nil {
+		t.Fatalf("Get after Add failed: %v", err)
+	}
+	if content != "# Table Tests\n\nContent here.\n" {
+		t.Errorf("Get returned unexpected content: %q", content)
+	}
+}
+
+func TestAdd_CreatesDirectories(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore([]string{dir})
+
+	_, err := store.Add("python", "web", "flask-routes", "# Flask Routes\n", AddOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify directory structure was created
+	info, err := os.Stat(filepath.Join(dir, "python", "web"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !info.IsDir() {
+		t.Error("expected directory to be created")
+	}
+}
+
+func TestAdd_InvalidComponents(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore([]string{dir})
+
+	tests := []struct {
+		name     string
+		language string
+		category string
+		exName   string
+	}{
+		{"empty language", "", "cat", "name"},
+		{"empty category", "go", "", "name"},
+		{"empty name", "go", "cat", ""},
+		{"uppercase language", "Go", "cat", "name"},
+		{"special char", "go", "cat!", "name"},
+		{"leading hyphen", "-go", "cat", "name"},
+		{"trailing hyphen", "go", "cat-", "name"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := store.Add(tc.language, tc.category, tc.exName, "# Content\n", AddOptions{})
+			if err == nil {
+				t.Error("expected validation error")
+			}
+		})
+	}
+}
+
+func TestAdd_EmptyContent(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore([]string{dir})
+
+	_, err := store.Add("go", "testing", "example", "   ", AddOptions{})
+	if err == nil {
+		t.Error("expected error for empty content")
+	}
+}
+
+func TestAdd_DuplicateWithoutForce(t *testing.T) {
+	dir := setupTestFixtures(t)
+	store := NewStore([]string{dir})
+
+	_, err := store.Add("go", "concurrency", "worker-pool", "# New Content\n", AddOptions{})
+	if err == nil {
+		t.Error("expected error for duplicate without force")
+	}
+}
+
+func TestAdd_DuplicateWithForce(t *testing.T) {
+	dir := setupTestFixtures(t)
+	store := NewStore([]string{dir})
+
+	_, err := store.Add("go", "concurrency", "worker-pool", "# Updated Content\n", AddOptions{Force: true})
+	if err != nil {
+		t.Fatalf("expected force overwrite to succeed: %v", err)
+	}
+
+	_, content, err := store.Get("go/concurrency/worker-pool")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if content != "# Updated Content\n" {
+		t.Errorf("expected updated content, got: %q", content)
+	}
+}
+
+func TestAdd_NoSources(t *testing.T) {
+	store := NewStore([]string{})
+
+	_, err := store.Add("go", "testing", "example", "# Content\n", AddOptions{})
+	if err == nil {
+		t.Error("expected error for no sources")
+	}
+}
+
+func TestAdd_InvalidatesCache(t *testing.T) {
+	dir := setupTestFixtures(t)
+	store := NewStore([]string{dir})
+
+	// Load cache
+	before := store.List(Filter{})
+
+	// Add new example
+	_, err := store.Add("go", "testing", "table-tests", "# Table Tests\n", AddOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	after := store.List(Filter{})
+	if len(after) != len(before)+1 {
+		t.Errorf("expected %d examples after add, got %d", len(before)+1, len(after))
+	}
+}
+
 func TestMultipleSources(t *testing.T) {
 	dir1 := setupTestFixtures(t)
 
