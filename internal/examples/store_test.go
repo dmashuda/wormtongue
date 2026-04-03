@@ -295,6 +295,29 @@ func TestAdd_InvalidatesCache(t *testing.T) {
 	}
 }
 
+func TestLanguages(t *testing.T) {
+	dir := setupTestFixtures(t)
+	store := NewStore([]string{dir})
+
+	langs := store.Languages()
+	if len(langs) != 2 {
+		t.Fatalf("expected 2 languages, got %d", len(langs))
+	}
+	if langs[0] != "csharp" || langs[1] != "go" {
+		t.Errorf("expected [csharp go], got %v", langs)
+	}
+}
+
+func TestLanguages_Empty(t *testing.T) {
+	dir := t.TempDir()
+	store := NewStore([]string{dir})
+
+	langs := store.Languages()
+	if len(langs) != 0 {
+		t.Errorf("expected 0 languages, got %d", len(langs))
+	}
+}
+
 func TestMultipleSources(t *testing.T) {
 	dir1 := setupTestFixtures(t)
 

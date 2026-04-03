@@ -241,6 +241,107 @@ func TestCmdAdd_ThenShow(t *testing.T) {
 	}
 }
 
+// languages tests
+
+func TestCmdLanguages_All(t *testing.T) {
+	exDir, cfgPath := setupCmdFixtures(t)
+	out, err := executeCmd(t, exDir, cfgPath, "languages")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "go") {
+		t.Errorf("expected 'go' in output, got:\n%s", out)
+	}
+	if !strings.Contains(out, "csharp") {
+		t.Errorf("expected 'csharp' in output, got:\n%s", out)
+	}
+}
+
+func TestCmdLanguages_NoResults(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "config.yaml")
+	exDir := filepath.Join(dir, "empty-examples")
+	if err := os.MkdirAll(exDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	out, err := executeCmd(t, exDir, cfgPath, "languages")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "No languages found") {
+		t.Errorf("expected 'No languages found', got:\n%s", out)
+	}
+}
+
+// init tests
+
+func TestCmdInit_CreatesFiles(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "wormtongue", "config.yaml")
+	exDir := filepath.Join(dir, "unused")
+
+	out, err := executeCmd(t, exDir, cfgPath, "init", "--config", cfgPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "Created config") {
+		t.Errorf("expected 'Created config' in output, got:\n%s", out)
+	}
+	if !strings.Contains(out, "Created library") {
+		t.Errorf("expected 'Created library' in output, got:\n%s", out)
+	}
+
+	// Verify config file exists
+	if _, err := os.Stat(cfgPath); err != nil {
+		t.Errorf("expected config file to exist: %v", err)
+	}
+
+	// Verify examples directory exists
+	examplesDir := filepath.Join(dir, "wormtongue", "examples")
+	info, err := os.Stat(examplesDir)
+	if err != nil {
+		t.Errorf("expected examples directory to exist: %v", err)
+	}
+	if !info.IsDir() {
+		t.Error("expected examples path to be a directory")
+	}
+}
+
+func TestCmdInit_ExistingConfigErrors(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "config.yaml")
+	exDir := filepath.Join(dir, "unused")
+
+	// Create existing config
+	if err := os.WriteFile(cfgPath, []byte("sources: []\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := executeCmd(t, exDir, cfgPath, "init", "--config", cfgPath)
+	if err == nil {
+		t.Error("expected error when config already exists")
+	}
+}
+
+func TestCmdInit_ForceOverwrites(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "config.yaml")
+	exDir := filepath.Join(dir, "unused")
+
+	// Create existing config
+	if err := os.WriteFile(cfgPath, []byte("sources: []\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	out, err := executeCmd(t, exDir, cfgPath, "init", "--config", cfgPath, "--force")
+	if err != nil {
+		t.Fatalf("expected force init to succeed: %v", err)
+	}
+	if !strings.Contains(out, "Created config") {
+		t.Errorf("expected success output, got:\n%s", out)
+	}
+}
+
 // source tests
 
 func TestCmdSource_Lifecycle(t *testing.T) {

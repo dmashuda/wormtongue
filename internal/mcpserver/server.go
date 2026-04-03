@@ -113,6 +113,21 @@ func registerTools(s *server.MCPServer, store *examples.ExampleStore) {
 		},
 	)
 
+	// list_languages
+	s.AddTool(
+		mcp.NewTool("list_languages",
+			mcp.WithDescription("List all available programming languages in the example library"),
+		),
+		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			langs := store.Languages()
+			if len(langs) == 0 {
+				return mcp.NewToolResultText("No languages found."), nil
+			}
+
+			return mcp.NewToolResultText(strings.Join(langs, "\n")), nil
+		},
+	)
+
 	// search_examples
 	s.AddTool(
 		mcp.NewTool("search_examples",
