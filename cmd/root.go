@@ -32,7 +32,7 @@ func Execute() error {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default ~/.config/wormtongue/config.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default ~/.wormtongue/config.yaml)")
 }
 
 func initStore() error {
